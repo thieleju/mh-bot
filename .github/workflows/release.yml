@@ -1,0 +1,72 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag (e.g. 1.2.3)"
+        required: true
+      latest:
+        description: "Also tag 'latest'? (true/false)"
+        required: false
+        default: "true"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare tags
+        id: prep
+        run: |
+          VERSION_INPUT=${{ github.event.inputs.version }}
+          if [[ ! $VERSION_INPUT =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must be semantic (x.y.z)" >&2
+            exit 1
+          fi
+          echo "VERSION=$VERSION_INPUT" >> $GITHUB_OUTPUT
+          TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION_INPUT}"
+          if [[ '${{ github.event.inputs.latest }}' == 'true' ]]; then
+            TAGS+=",${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          fi
+          echo "TAGS=$TAGS" >> $GITHUB_OUTPUT
+
+      - name: Build and push (multi-arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.prep.outputs.TAGS }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.version=${{ steps.prep.outputs.VERSION }}
+            org.opencontainers.image.created=${{ github.run_started_at }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Summary
+        run: |
+          echo "Pushed tags: ${{ steps.prep.outputs.TAGS }}" >> $GITHUB_STEP_SUMMARY
