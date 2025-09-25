@@ -45,19 +45,24 @@ function releaseSlot() {
 
 const wheelService = new WeaponWheelService(weapons);
 
-// Global in-memory history (process lifetime). Stores weapon objects newest-first.
-const weaponHistory = [];
+// Per-user in-memory history: Map<userId, Weapon[]> (newest first)
+const userWeaponHistory = new Map();
 
-function pushHistory(weapon) {
-  weaponHistory.unshift(weapon); // add to front
-  if (weaponHistory.length > HISTORY_SIZE) weaponHistory.length = HISTORY_SIZE;
+function pushHistory(userId, weapon) {
+  let arr = userWeaponHistory.get(userId);
+  if (!arr) {
+    arr = [];
+    userWeaponHistory.set(userId, arr);
+  }
+  arr.unshift(weapon);
+  if (arr.length > HISTORY_SIZE) arr.length = HISTORY_SIZE;
 }
 
-function buildHistoryLine(guild) {
-  if (!weaponHistory.length) return null;
-  const slice = weaponHistory.slice(0, HISTORY_SIZE);
+function buildHistoryLine(userId, guild) {
+  const arr = userWeaponHistory.get(userId);
+  if (!arr || !arr.length) return null;
+  const slice = arr.slice(0, HISTORY_SIZE);
   const emojis = slice.map((w) => {
-    // Reuse resolver from service (avoid import loop by light inline logic)
     if (guild && w.customEmojiName) {
       const found = guild.emojis.cache.find(
         (e) => e.name === w.customEmojiName
@@ -157,12 +162,12 @@ export async function handleSpinCommand(interaction) {
       interaction.member?.displayName ||
       interaction.user.displayName ||
       interaction.user.username;
-    pushHistory(quickWeapon);
+    pushHistory(userId, quickWeapon);
     const quickEmbed = wheelService.createFinalResultEmbed(
       displayName,
       quickWeapon,
       interaction.guild,
-      buildHistoryLine(interaction.guild)
+      buildHistoryLine(userId, interaction.guild)
     );
     try {
       await interaction.editReply({
@@ -296,12 +301,12 @@ export async function handleSpinCommand(interaction) {
       interaction.member?.displayName ||
       interaction.user.displayName ||
       interaction.user.username;
-    pushHistory(finalWeapon);
+    pushHistory(userId, finalWeapon);
     const finalEmbed = wheelService.createFinalResultEmbed(
       displayName,
       finalWeapon,
       interaction.guild,
-      buildHistoryLine(interaction.guild)
+      buildHistoryLine(userId, interaction.guild)
     );
     await reply.edit({ embeds: [finalEmbed] });
     logger.info(
