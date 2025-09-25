@@ -1,22 +1,20 @@
-# mhw-wheel-bot
+# mh-bot
 
-Discord Bot that randomly selects Monster Hunter World weapons
+Discord Bot that randomly selects Monster Hunter weapons
 
-A Discord.js bot that provides a `/randomweapon` slash command to randomly select one of the 14 Monster Hunter World weapons with an animated spinning wheel effect.
+A Discord.js bot that provides a `/randomweapon` slash command to randomly select one of the 14 Monster Hunter weapons with an animated spinning wheel effect.
 
 ## Features
 
 - 🎲 `/randomweapon` slash command
 - 🎯 Random selection from all 14 MHW weapons
 - ⚡ Animated spinning wheel effect
-- 📋 Detailed weapon descriptions
-- 🎨 Beautiful Discord embeds
 
 ## Setup
 
 ### Prerequisites
 
-- Node.js 16.9.0 or newer
+- Node.js 22 or newer
 - A Discord application and bot token
 
 ### Discord Bot Setup
