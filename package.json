@@ -1,5 +1,5 @@
 {
-  "name": "mhw-wheel-bot",
+  "name": "mh-bot",
   "version": "1.0.0",
   "description": "Monster Hunter Random Weapon",
   "main": "index.js",
@@ -9,13 +9,6 @@
     "dev": "nodemon index.js",
     "test": "vitest run"
   },
-  "keywords": [
-    "discord",
-    "bot",
-    "monster-hunter",
-    "random-weapon"
-  ],
-  "author": "Julian",
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.22.1",
