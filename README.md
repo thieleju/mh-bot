@@ -32,15 +32,15 @@ A Discord.js bot that provides a `/randomweapon` slash command to randomly selec
 ### Docker Deployment
 
 ```bash
-docker build -t mhw-wheel-bot:latest .
+docker build -t mh-bot:latest .
 ```
 
 ```bash
-docker run -d --name mhw-wheel-bot \
+docker run -d --name mh-bot \
   -e DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN \
   -e CLIENT_ID=YOUR_APPLICATION_CLIENT_ID \
   --restart unless-stopped \
-  mhw-wheel-bot:latest
+  mh-bot:latest
 ```
 
 ## License

@@ -1,12 +1,12 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  mhw-wheel-bot:
+  mh-bot:
     build: .
-    container_name: mhw-wheel-bot
+    container_name: mh-bot
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - CLIENT_ID=${CLIENT_ID}
     restart: unless-stopped
     # Uncomment the line below if you want to use an existing image instead of building
-    # image: mhw-wheel-bot:latest
+    # image: mh-bot:latest
