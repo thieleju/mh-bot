@@ -74,12 +74,15 @@ export class WeaponWheelService {
     if (historyLine) {
       desc += `\n\n**Last ${HISTORY_SIZE} weapons:** ${historyLine.line}`;
     }
-    return new EmbedBuilder()
+    const builder = new EmbedBuilder()
       .setTitle(`🎲 ${userDisplayName}, your weapon is...`)
       .setDescription(desc)
-      .setThumbnail(weapon.thumbnail)
       .setColor(COLOR_FINAL)
       .setFooter({ text: FOOTER_TEXT })
       .setTimestamp();
+    if (weapon.thumbnail && /^https?:\/\//i.test(weapon.thumbnail)) {
+      builder.setThumbnail(weapon.thumbnail);
+    }
+    return builder;
   }
 }
