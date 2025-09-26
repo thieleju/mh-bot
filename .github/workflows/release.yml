@@ -42,11 +42,19 @@ jobs:
           status=$?
           end=$(date +%s)
           duration=$((end-start))
-          # Parse vitest v3 summary lines
-          total=$(grep -Eo '^\s*Tests\s+[0-9]+' tests.out | awk '{print $2}' | tail -n1)
-          passed=$(grep -Eo '^\s*Tests\s+[0-9]+\s+passed' tests.out | awk '{print $2}' | tail -n1)
-          failed=$(grep -Eo '^\s*Tests\s+[0-9]+\s+failed' tests.out | awk '{print $2}' | tail -n1)
-          files=$(grep -Eo '^\s*Test Files\s+[0-9]+' tests.out | awk '{print $3}' | tail -n1)
+          # Parse vitest v3 summary lines (tolerant). Avoid failing if grep finds nothing.
+          set +o pipefail
+          total=$(grep -Eo '^[[:space:]]*Tests[[:space:]]+[0-9]+' tests.out | awk '{print $2}' | tail -n1 || true)
+          passed=$(grep -Eo '^[[:space:]]*Tests[[:space:]]+[0-9]+[[:space:]]+passed' tests.out | awk '{print $2}' | tail -n1 || true)
+          failed=$(grep -Eo '^[[:space:]]*Tests[[:space:]]+[0-9]+[[:space:]]+failed' tests.out | awk '{print $2}' | tail -n1 || true)
+          files=$(grep -Eo '^[[:space:]]*Test Files[[:space:]]+[0-9]+' tests.out | awk '{print $3}' | tail -n1 || true)
+          # Fallback math when lines vary: if failed is empty and total exists, assume all passed
+          if [ -z "$failed" ] && [ -n "$total" ]; then
+            failed=0
+          fi
+          if [ -z "$passed" ] && [ -n "$total" ] && [ -n "$failed" ]; then
+            passed=$((total - failed))
+          fi
           echo "### Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Files: ${files:-unknown}" >> $GITHUB_STEP_SUMMARY
           echo "- Total: ${total:-unknown}" >> $GITHUB_STEP_SUMMARY
