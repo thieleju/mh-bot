@@ -5,6 +5,7 @@ import {
   REST,
   Routes,
   MessageFlags,
+  ActivityType,
 } from "discord.js";
 import { spinCommandData, handleSpinCommand } from "./scripts/spinTheWheel.js";
 import { COMMAND_SPIN_NAME } from "./scripts/constants.js";
@@ -28,6 +29,40 @@ const client = new Client({
 client.once("clientReady", () => {
   logger.info(`${client.user.tag} is online.`);
   registerCommands();
+  updatePresence();
+});
+
+function updatePresence() {
+  try {
+    const guildCount = client.guilds.cache.size;
+    const activity = {
+      name: `Dootin' in ${guildCount} Server${guildCount === 1 ? "" : "s"}`,
+      type: ActivityType.Custom,
+    };
+    client.user.setPresence({ activities: [activity], status: "online" });
+    logger.info("Presence updated", { guildCount });
+  } catch (err) {
+    logger.warn("Failed to update presence", { error: err });
+  }
+}
+
+// Update presence and log when the bot joins or leaves servers
+client.on("guildCreate", (guild) => {
+  logger.info("Joined guild", {
+    guildId: guild.id,
+    guildName: guild.name,
+    memberCount: guild.memberCount,
+    ownerId: guild.ownerId,
+  });
+  updatePresence();
+});
+
+client.on("guildDelete", (guild) => {
+  logger.info("Removed from guild", {
+    guildId: guild?.id,
+    guildName: guild?.name,
+  });
+  updatePresence();
 });
 
 async function registerCommands() {
