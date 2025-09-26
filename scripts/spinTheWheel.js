@@ -10,7 +10,10 @@ import {
   USER_COOLDOWN_MS,
   HISTORY_SIZE,
 } from "./constants.js";
-import { WeaponWheelService } from "./WeaponWheelService.js";
+import {
+  WeaponWheelService,
+  resolveWeaponEmoji,
+} from "./WeaponWheelService.js";
 import { weapons } from "./weapons.js";
 import { logger, interactionContext } from "./logger.js";
 
@@ -62,15 +65,7 @@ function buildHistoryLine(userId, guild) {
   const arr = userWeaponHistory.get(userId);
   if (!arr || !arr.length) return null;
   const slice = arr.slice(0, HISTORY_SIZE);
-  const emojis = slice.map((w) => {
-    if (guild && w.customEmojiName) {
-      const found = guild.emojis.cache.find(
-        (e) => e.name === w.customEmojiName
-      );
-      if (found) return found.toString();
-    }
-    return w.fallbackEmoji || "❔";
-  });
+  const emojis = slice.map((w) => resolveWeaponEmoji(w, guild));
   return { count: slice.length, line: emojis.join(" ") };
 }
 
