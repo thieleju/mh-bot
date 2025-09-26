@@ -6,7 +6,7 @@ A Discord.js bot that provides a `/randomweapon` slash command to randomly selec
 
 ## Features
 
-- 🎲 `/randomweapon` slash command
+- 🎲 `/spinthewheel` slash command
 - 🎯 Random selection from all 14 MHW weapons
 - ⚡ Animated spinning wheel effect
 
