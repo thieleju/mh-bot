@@ -34,6 +34,8 @@ describe("WeaponWheelService", () => {
     const lines = list.split("\n");
     expect(lines[1]).toMatch(/\*\*➤/); // second weapon highlighted
     expect(lines[0]).not.toMatch(/\*\*➤/);
+    // includes fallback emoji when no custom/app emoji is present
+    expect(lines[0]).toContain(mockWeapons[0].fallbackEmoji);
   });
   it("createFinalResultEmbed constructs expected embed (without history)", () => {
     const svc = new WeaponWheelService(mockWeapons, { rng: () => 0 });
@@ -48,6 +50,8 @@ describe("WeaponWheelService", () => {
     const desc = obj.description || "";
     expect(title).toMatch(/User/);
     expect(desc).toContain(weapon.name);
+    // shows resolved emoji (fallback in this case)
+    expect(desc).toContain(weapon.fallbackEmoji);
     expect(desc).not.toMatch(/Last \d+ weapons/);
   });
 });

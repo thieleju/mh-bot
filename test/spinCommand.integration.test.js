@@ -60,8 +60,14 @@ describe("handleSpinCommand integration", () => {
   it("completes a spin and edits message multiple times", async () => {
     const interaction = createMockInteraction();
     await handleSpinCommand(interaction);
-    // Expect at least 2 edits (animation + final)
+    // Expect edits for animation and final embeds
     expect(interaction.editReply).toHaveBeenCalled();
+    // Ensure one of the edits contains an embed payload
+    const calls = interaction.editReply.mock.calls;
+    const hasEmbeds = calls.some(
+      (args) => Array.isArray(args) && args[0] && args[0].embeds
+    );
+    expect(hasEmbeds).toBe(true);
   });
 
   it("enforces cooldown on rapid second call", async () => {

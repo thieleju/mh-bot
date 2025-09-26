@@ -7,7 +7,7 @@ import {
   FOOTER_TEXT,
   HISTORY_SIZE,
 } from "./constants.js";
-import { resolveEmoji } from "./emojis.js";
+import { resolveEmoji } from "./helper.js";
 
 // Service encapsulating the wheel logic (Single Responsibility / testability)
 export class WeaponWheelService {

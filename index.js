@@ -13,7 +13,7 @@ import {
   logger,
   attachGlobalErrorHandlers,
   interactionContext,
-} from "./scripts/logger.js";
+} from "./scripts/helper.js";
 
 // Environment validation
 const { DISCORD_TOKEN, CLIENT_ID } = process.env;
