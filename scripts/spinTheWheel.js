@@ -169,19 +169,6 @@ export async function handleSpinCommand(interaction) {
     return;
   }
 
-  // Fetch reply reference
-  let reply;
-  try {
-    reply = await interaction.fetchReply();
-  } catch (err) {
-    logger.error(
-      "Failed to fetch reply",
-      interactionContext(interaction, { error: err })
-    );
-    release();
-    return;
-  }
-
   // Hybrid step-wise animation with hard duration cap & early break
   const activeSpins = getActiveSpins();
   const busy = activeSpins > Math.max(1, Math.floor(MAX_CONCURRENT_SPINS / 2));
@@ -220,7 +207,7 @@ export async function handleSpinCommand(interaction) {
           highlight = Math.floor(Math.random() * weapons.length);
         } while (highlight === finalIndex && stepsToUse > 2); // small variety tweak
       }
-      await reply.edit({
+      await interaction.editReply({
         embeds: [wheelService.createSpinEmbed(highlight, interaction.guild)],
       });
     }
@@ -234,7 +221,7 @@ export async function handleSpinCommand(interaction) {
   }
 
   try {
-    await reply.edit({
+    await interaction.editReply({
       embeds: [
         wheelService.createSelectionEmbed(finalIndex, interaction.guild),
       ],
@@ -258,7 +245,7 @@ export async function handleSpinCommand(interaction) {
       interaction.guild,
       buildHistoryLine(userId, interaction.guild)
     );
-    await reply.edit({ embeds: [finalEmbed] });
+    await interaction.editReply({ embeds: [finalEmbed] });
     logger.info(
       "Spin command completed",
       interactionContext(interaction, {
