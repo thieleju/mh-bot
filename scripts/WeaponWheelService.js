@@ -1,4 +1,5 @@
 import { EmbedBuilder } from "discord.js";
+import { renderApplicationEmoji } from "./appEmojis.js";
 import {
   COLOR_INITIAL,
   COLOR_SPINNING,
@@ -15,6 +16,12 @@ import {
  * @returns {string} - The resolved emoji string.
  */
 export function resolveWeaponEmoji(weapon, guild) {
+  // Prefer application-owned emoji (globally usable by the app)
+  if (weapon.customEmojiName) {
+    const appEmoji = renderApplicationEmoji(weapon.customEmojiName);
+    if (appEmoji) return appEmoji;
+  }
+  // Fallback to guild emoji if application emoji is missing
   if (guild && weapon.customEmojiName) {
     const found = guild.emojis.cache.find(
       (e) => e.name === weapon.customEmojiName
