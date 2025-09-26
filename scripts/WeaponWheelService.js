@@ -1,5 +1,4 @@
 import { EmbedBuilder } from "discord.js";
-import { renderApplicationEmoji } from "./appEmojis.js";
 import {
   COLOR_INITIAL,
   COLOR_SPINNING,
@@ -8,28 +7,7 @@ import {
   FOOTER_TEXT,
   HISTORY_SIZE,
 } from "./constants.js";
-
-/**
- * Resolves the emoji representation of a weapon, prioritizing custom emojis in the guild.
- * @param {Object} weapon - The weapon object containing emoji info.
- * @param {Object} guild - The guild object to search for custom emojis.
- * @returns {string} - The resolved emoji string.
- */
-export function resolveWeaponEmoji(weapon, guild) {
-  // Prefer application-owned emoji (globally usable by the app)
-  if (weapon.customEmojiName) {
-    const appEmoji = renderApplicationEmoji(weapon.customEmojiName);
-    if (appEmoji) return appEmoji;
-  }
-  // Fallback to guild emoji if application emoji is missing
-  if (guild && weapon.customEmojiName) {
-    const found = guild.emojis.cache.find(
-      (e) => e.name === weapon.customEmojiName
-    );
-    if (found) return found.toString();
-  }
-  return weapon.fallbackEmoji || "❔";
-}
+import { resolveEmoji } from "./emojis.js";
 
 // Service encapsulating the wheel logic (Single Responsibility / testability)
 export class WeaponWheelService {
@@ -45,7 +23,7 @@ export class WeaponWheelService {
   buildWeaponList(highlightIndex, guild) {
     return this.weapons
       .map((w, idx) => {
-        const emoji = resolveWeaponEmoji(w, guild);
+        const emoji = resolveEmoji(w, guild);
         const isHighlighted = idx === highlightIndex;
         return isHighlighted
           ? `**➤ ${emoji} ${w.name}**`
@@ -62,8 +40,9 @@ export class WeaponWheelService {
   }
 
   createSpinEmbed(highlightIndex, guild) {
+    const wheelEmoji = "🎲"; //resolveEmoji("weapons", guild) || "🎲";
     return new EmbedBuilder()
-      .setTitle("🎲 Weapon Wheel Spinning...")
+      .setTitle(`${wheelEmoji} Weapon Wheel Spinning...`)
       .setDescription(this.buildWeaponList(highlightIndex, guild))
       .setColor(COLOR_SPINNING);
   }
@@ -76,7 +55,7 @@ export class WeaponWheelService {
   }
 
   createFinalResultEmbed(userDisplayName, weapon, guild, historyLine) {
-    const emoji = resolveWeaponEmoji(weapon, guild);
+    const emoji = resolveEmoji(weapon, guild);
     let desc = `# ${emoji} ${weapon.name}\n\n*${weapon.description}*`;
     if (historyLine) {
       desc += `\n\n**Last ${HISTORY_SIZE} weapons:** ${historyLine.line}`;
