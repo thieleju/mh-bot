@@ -40,3 +40,27 @@ export const COMMAND_SPIN_NAME = "spinthewheel";
 export const COMMAND_SPIN_DESCRIPTION = "Get a random Monster Hunter weapon!";
 
 export const FOOTER_TEXT = "Good luck on your hunt! (You'll need it)";
+
+// Application emoji ID maps
+// Add IDs for emojis uploaded to your Discord application (globally usable by the bot)
+export const APP_EMOJI_IDS = {
+  sns: "1421096608552063006",
+  sa: "1421096598112309371",
+  lan: "1421096586485829632",
+  ig: "1421096571625406576",
+  hh: "1421096555259101289",
+  hbg: "1421096544077353011",
+  ham: "1421096532727562284",
+  gs: "1421096520362491964",
+  gl: "1421096508262055979",
+  db: "1421096492868833401",
+  cb: "1421096477568270388",
+  bow: "1421096377957744662",
+  lbg: "1421106749921955900",
+  ls: "1421106637149700136",
+};
+
+// Animated application emoji IDs (if any). Use the same keys; values are IDs for animated emojis.
+export const APP_ANIMATED_EMOJI_IDS = {
+  weapons: "1421113588227117207",
+};
