@@ -8,64 +8,20 @@ import {
   FAST_PATH_THRESHOLD_MS,
   REDUCED_STEPS_WHEN_BUSY,
   USER_COOLDOWN_MS,
-  HISTORY_SIZE,
 } from "./constants.js";
 import { WeaponWheelService } from "./WeaponWheelService.js";
-import { resolveEmoji } from "./emojis.js";
+import {
+  acquireSlot,
+  releaseSlot,
+  pushHistory,
+  buildHistoryLine,
+  getActiveSpins,
+  getWaiterCount,
+} from "./helper.js";
 import { weapons } from "./weapons.js";
-import { logger, interactionContext } from "./logger.js";
-
-// Lightweight in-file concurrency manager (avoids extra file churn)
-let activeSpins = 0;
-const waiters = [];
-
-function acquireSlot() {
-  if (activeSpins < MAX_CONCURRENT_SPINS) {
-    activeSpins++;
-    return Promise.resolve({ queuedMs: 0 });
-  }
-  const start = Date.now();
-  return new Promise((resolve) => {
-    const ticket = () => resolve({ queuedMs: Date.now() - start });
-    waiters.push(ticket);
-  });
-}
-
-function releaseSlot() {
-  if (activeSpins > 0) activeSpins--;
-  if (waiters.length && activeSpins < MAX_CONCURRENT_SPINS) {
-    activeSpins++;
-    const next = waiters.shift();
-    try {
-      next();
-    } catch (e) {
-      logger.error("Spin waiter error", { error: e });
-    }
-  }
-}
+import { logger, interactionContext } from "./helper.js";
 
 const wheelService = new WeaponWheelService(weapons);
-
-// Per-user in-memory history: Map<userId, Weapon[]> (newest first)
-const userWeaponHistory = new Map();
-
-function pushHistory(userId, weapon) {
-  let arr = userWeaponHistory.get(userId);
-  if (!arr) {
-    arr = [];
-    userWeaponHistory.set(userId, arr);
-  }
-  arr.unshift(weapon);
-  if (arr.length > HISTORY_SIZE) arr.length = HISTORY_SIZE;
-}
-
-function buildHistoryLine(userId, guild) {
-  const arr = userWeaponHistory.get(userId);
-  if (!arr || !arr.length) return null;
-  const slice = arr.slice(0, HISTORY_SIZE);
-  const emojis = slice.map((w) => resolveEmoji(w, guild));
-  return { count: slice.length, line: emojis.join(" ") };
-}
 
 // Simple per-user cooldown tracking (in-memory; resets on process restart)
 const lastUseByUser = new Map();
@@ -78,7 +34,7 @@ export async function handleSpinCommand(interaction) {
   logger.info(
     "Spin command invoked",
     interactionContext(interaction, {
-      activeSpins,
+      activeSpins: getActiveSpins(),
       cooldownMs: USER_COOLDOWN_MS,
     })
   );
@@ -227,9 +183,10 @@ export async function handleSpinCommand(interaction) {
   }
 
   // Hybrid step-wise animation with hard duration cap & early break
+  const activeSpins = getActiveSpins();
   const busy = activeSpins > Math.max(1, Math.floor(MAX_CONCURRENT_SPINS / 2));
   const veryBusy =
-    activeSpins >= MAX_CONCURRENT_SPINS - 1 && waiters.length > 0;
+    activeSpins >= MAX_CONCURRENT_SPINS - 1 && getWaiterCount() > 0;
   let stepsToUse = SPIN_STEPS;
   if (busy) stepsToUse = Math.min(REDUCED_STEPS_WHEN_BUSY, stepsToUse);
   if (veryBusy)
