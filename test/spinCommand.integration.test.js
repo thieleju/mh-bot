@@ -21,10 +21,13 @@ function createMockInteraction() {
   return {
     user: { id: "user1", username: "TestUser", displayName: "TestUser" },
     member: null,
+    options: {
+      getString: vi.fn(() => null),
+    },
     guild: {
       emojis: {
         cache: { find: () => undefined },
-        fetch: vi.fn(async () => {}),
+        fetch: vi.fn(async () => { }),
       },
     },
     commandName: "spinthewheel",
@@ -78,5 +81,19 @@ describe("handleSpinCommand integration", () => {
     await handleSpinCommand(second);
     // Second should attempt a direct ephemeral reply (flags)
     expect(second.reply).toHaveBeenCalled();
+  });
+
+  it("can spin hunting horns when the option is set", async () => {
+    const interaction = createMockInteraction();
+    interaction.user.id = "user2";
+    interaction.options.getString = vi.fn(() => "huntinghorns");
+    await handleSpinCommand(interaction);
+    expect(interaction.editReply).toHaveBeenCalled();
+    const payloads = interaction.editReply.mock.calls.map((args) => args[0]);
+    expect(
+      payloads.some((payload) =>
+        JSON.stringify(payload || {}).includes("Hunting Horn")
+      )
+    ).toBe(true);
   });
 });

@@ -28,6 +28,28 @@ describe("WeaponWheelService", () => {
     const w = svc.pickRandomWeapon();
     expect(mockWeapons).toContain(w);
   });
+  it("supports generic item metadata in the final embed", () => {
+    const horn = {
+      name: "Test Horn",
+      description: "Test description",
+      attack: 123,
+      element: "Fire 10",
+      affinity: 5,
+      echoBubble: "Attack Up",
+      skills: ["Horn Maestro Lv 1"],
+    };
+    const svc = new WeaponWheelService([horn], {
+      labelSingular: "Hunting Horn",
+      labelPlural: "Hunting Horns",
+      historyLabel: "hunting horns",
+    });
+    const builder = svc.createFinalResultEmbed("User", horn, null, null);
+    const obj = builder.toJSON();
+    expect(obj.title).toContain("Hunting Horn");
+    expect(obj.description).toContain("Attack");
+    expect(obj.description).toContain("Echo Bubble");
+    expect(obj.description).toContain("Horn Maestro Lv 1");
+  });
   it("buildWeaponList highlights correct index", () => {
     const svc = new WeaponWheelService(mockWeapons, { rng: () => 0 });
     const list = svc.buildWeaponList(1, null);

@@ -40,7 +40,7 @@ export function resolveEmoji(target, guild) {
     appEmojiTag(name) ||
     guildEmojiTag(name, guild) ||
     weapon.fallbackEmoji ||
-    "❔"
+    "•"
   );
 }
 
@@ -88,20 +88,26 @@ export function releaseSlot() {
 // History helpers
 // =========================
 
-const userWeaponHistory = new Map(); // Map<userId, Weapon[]>
+const userWeaponHistory = new Map(); // Map<historyKey:userId, Item[]>
 
-export function pushHistory(userId, weapon) {
-  let arr = userWeaponHistory.get(userId);
+function historyKeyFor(historyKey, userId) {
+  return `${historyKey}:${userId}`;
+}
+
+export function pushHistory(userId, weapon, historyKey = "weapons") {
+  const key = historyKeyFor(historyKey, userId);
+  let arr = userWeaponHistory.get(key);
   if (!arr) {
     arr = [];
-    userWeaponHistory.set(userId, arr);
+    userWeaponHistory.set(key, arr);
   }
   arr.unshift(weapon);
   if (arr.length > HISTORY_SIZE) arr.length = HISTORY_SIZE;
 }
 
-export function buildHistoryLine(userId, guild) {
-  const arr = userWeaponHistory.get(userId);
+export function buildHistoryLine(userId, guild, historyKey = "weapons") {
+  const key = historyKeyFor(historyKey, userId);
+  const arr = userWeaponHistory.get(key);
   if (!arr || !arr.length) return null;
   const slice = arr.slice(0, HISTORY_SIZE);
   const emojis = slice.map((w) => resolveEmoji(w, guild));
@@ -140,8 +146,8 @@ function write(level, message, meta) {
     level === "ERROR"
       ? console.error
       : level === "WARN"
-      ? console.warn
-      : console.log;
+        ? console.warn
+        : console.log;
   if (meta !== undefined) {
     loggerFn(base, serialize(meta));
   } else {

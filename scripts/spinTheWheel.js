@@ -4,6 +4,9 @@ import {
   SPIN_STEPS,
   COMMAND_SPIN_NAME,
   COMMAND_SPIN_DESCRIPTION,
+  COMMAND_SPIN_EXTRA_OPTION,
+  COMMAND_SPIN_EXTRA_DESCRIPTION,
+  COMMAND_SPIN_EXTRA_HORN_VALUE,
   MAX_CONCURRENT_SPINS,
   FAST_PATH_THRESHOLD_MS,
   REDUCED_STEPS_WHEN_BUSY,
@@ -19,23 +22,65 @@ import {
   getWaiterCount,
 } from "./helper.js";
 import { weapons } from "./weapons.js";
+import { huntingHorns } from "./horns.js";
 import { logger, interactionContext } from "./helper.js";
 
-const wheelService = new WeaponWheelService(weapons);
+const weaponWheelService = new WeaponWheelService(weapons, {
+  labelSingular: "Weapon",
+  labelPlural: "Weapons",
+  historyLabel: "weapons",
+});
+
+const hornWheelService = new WeaponWheelService(huntingHorns, {
+  labelSingular: "Hunting Horn",
+  labelPlural: "Hunting Horns",
+  historyLabel: "hunting horns",
+});
+
+function getWheelContext(interaction) {
+  const extra = interaction.options?.getString?.(COMMAND_SPIN_EXTRA_OPTION);
+  const useHorns = extra === COMMAND_SPIN_EXTRA_HORN_VALUE;
+  return useHorns
+    ? {
+      service: hornWheelService,
+      items: huntingHorns,
+      historyKey: null,
+      trackHistory: false,
+    }
+    : {
+      service: weaponWheelService,
+      items: weapons,
+      historyKey: "weapons",
+      trackHistory: true,
+    };
+}
 
 // Simple per-user cooldown tracking (in-memory; resets on process restart)
 const lastUseByUser = new Map();
 
 export const spinCommandData = new SlashCommandBuilder()
   .setName(COMMAND_SPIN_NAME)
-  .setDescription(COMMAND_SPIN_DESCRIPTION);
+  .setDescription(COMMAND_SPIN_DESCRIPTION)
+  .addStringOption((option) =>
+    option
+      .setName(COMMAND_SPIN_EXTRA_OPTION)
+      .setDescription(COMMAND_SPIN_EXTRA_DESCRIPTION)
+      .addChoices({
+        name: "huntinghorns",
+        value: COMMAND_SPIN_EXTRA_HORN_VALUE,
+      })
+  );
 
 export async function handleSpinCommand(interaction) {
+  const wheel = getWheelContext(interaction);
+  const wheelService = wheel.service;
+
   logger.info(
     "Spin command invoked",
     interactionContext(interaction, {
       activeSpins: getActiveSpins(),
       cooldownMs: USER_COOLDOWN_MS,
+      wheel: wheel.historyKey || "hunting horns",
     })
   );
 
@@ -106,17 +151,21 @@ export async function handleSpinCommand(interaction) {
   };
 
   if (slotInfo.fastPath) {
-    const quickWeapon = wheelService.pickRandomWeapon();
+    const quickItem = wheelService.pickRandomItem();
     const displayName =
       interaction.member?.displayName ||
       interaction.user.displayName ||
       interaction.user.username;
-    pushHistory(userId, quickWeapon);
+    if (wheel.trackHistory) {
+      pushHistory(userId, quickItem, wheel.historyKey);
+    }
     const quickEmbed = wheelService.createFinalResultEmbed(
       displayName,
-      quickWeapon,
+      quickItem,
       interaction.guild,
-      buildHistoryLine(userId, interaction.guild)
+      wheel.trackHistory
+        ? buildHistoryLine(userId, interaction.guild, wheel.historyKey)
+        : null
     );
     try {
       await interaction.editReply({
@@ -126,8 +175,9 @@ export async function handleSpinCommand(interaction) {
       logger.warn(
         "Fast-path (queue too long) result",
         interactionContext(interaction, {
-          weapon: quickWeapon.name,
+          item: quickItem.name,
           queuedMs: slotInfo.queuedMs,
+          wheel: wheel.historyKey || "hunting horns",
         })
       );
     } catch (err) {
@@ -183,8 +233,8 @@ export async function handleSpinCommand(interaction) {
     ? Math.min(SPIN_DURATION_MS, 3000)
     : SPIN_DURATION_MS;
   const perStep = maxDuration / Math.max(stepsToUse, 1);
-  const finalWeapon = wheelService.pickRandomWeapon();
-  const finalIndex = weapons.indexOf(finalWeapon);
+  const finalItem = wheelService.pickRandomItem();
+  const finalIndex = wheel.items.indexOf(finalItem);
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   const animStart = Date.now();
@@ -204,8 +254,8 @@ export async function handleSpinCommand(interaction) {
         highlight = finalIndex;
       } else {
         do {
-          highlight = Math.floor(Math.random() * weapons.length);
-        } while (highlight === finalIndex && stepsToUse > 2); // small variety tweak
+          highlight = Math.floor(Math.random() * wheel.items.length);
+        } while (highlight === finalIndex && stepsToUse > 2);
       }
       await interaction.editReply({
         embeds: [wheelService.createSpinEmbed(highlight, interaction.guild)],
@@ -238,18 +288,23 @@ export async function handleSpinCommand(interaction) {
       interaction.member?.displayName ||
       interaction.user.displayName ||
       interaction.user.username;
-    pushHistory(userId, finalWeapon);
+    if (wheel.trackHistory) {
+      pushHistory(userId, finalItem, wheel.historyKey);
+    }
     const finalEmbed = wheelService.createFinalResultEmbed(
       displayName,
-      finalWeapon,
+      finalItem,
       interaction.guild,
-      buildHistoryLine(userId, interaction.guild)
+      wheel.trackHistory
+        ? buildHistoryLine(userId, interaction.guild, wheel.historyKey)
+        : null
     );
     await interaction.editReply({ embeds: [finalEmbed] });
     logger.info(
       "Spin command completed",
       interactionContext(interaction, {
-        weapon: finalWeapon.name,
+        item: finalItem.name,
+        wheel: wheel.historyKey || "hunting horns",
         steps: stepsToUse,
         queuedMs: slotInfo.queuedMs,
         durationMs: Date.now() - animStart,

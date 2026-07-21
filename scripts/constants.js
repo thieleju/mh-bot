@@ -37,7 +37,12 @@ export const COLOR_SELECTION = 0x00ff00; // Green
 export const COLOR_FINAL = 0x00ff00; // Green
 
 export const COMMAND_SPIN_NAME = "spinthewheel";
-export const COMMAND_SPIN_DESCRIPTION = "Get a random Monster Hunter weapon!";
+export const COMMAND_SPIN_DESCRIPTION =
+  "Get a random Monster Hunter weapon or hunting horn!";
+export const COMMAND_SPIN_EXTRA_OPTION = "extra";
+export const COMMAND_SPIN_EXTRA_DESCRIPTION =
+  "Pick an extra wheel category.";
+export const COMMAND_SPIN_EXTRA_HORN_VALUE = "huntinghorns";
 
 export const FOOTER_TEXT = "Good luck on your hunt! (You'll need it)";
 
